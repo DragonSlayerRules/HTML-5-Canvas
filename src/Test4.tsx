@@ -92,7 +92,7 @@ const Test4 = () => {
     if (!ctx) return;
 
     // clear the canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // ctx.clearRect(0, 0, canvas.width, canvas.height);
     const image = canvas.previousSibling as HTMLImageElement;
 
     image.onload = () => {
