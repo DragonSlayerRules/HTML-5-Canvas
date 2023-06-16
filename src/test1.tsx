@@ -3,7 +3,7 @@
 import React, { useRef, ChangeEvent, useEffect, useState } from "react";
 import "./index.css";
 
-function App() {
+function Test1() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawingRef = useRef<boolean>(false);
   const lastXRef = useRef<number>(0);
@@ -18,6 +18,7 @@ function App() {
     { x: number; y: number; width: number; height: number }[]
   >([]);
 
+  console.log(drawings)
   const canvas = canvasRef.current;
   const context = canvas?.getContext("2d");
   if (context?.strokeStyle || context?.lineWidth) {
@@ -154,6 +155,7 @@ function App() {
   };
 
   const clearCanvas = () => {
+    
     setDrawings([]);
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
@@ -195,4 +197,4 @@ function App() {
   );
 }
 
-export default App;
+export default Test1;

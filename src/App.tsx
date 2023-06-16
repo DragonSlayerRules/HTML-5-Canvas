@@ -3,16 +3,23 @@ import React from "react";
 import Test1 from "./test1";
 import RectangleDrawing from "./Test2";
 import Test4 from "./Test4";
+import Test5 from "./Test5";
+import Test6 from "./Test6";
+import Test7 from "./Test7";
+import ImageUploader from "./Test3";
 // import RectangleDrawing from "./Test2";
 
 const App = () => {
   return (
     <div>
       {/* <RectangleDrawing /> */}
-      {/* <Test3 /> */}
+      {/* <ImageUploader /> */}
       {/* <Test1 /> */}
+      <Test7 />
+      {/* <Test1 /> */}
+      {/* <Test7 /> */}
       {/* <RectangleDrawing /> */}
-      <Test4 />
+      {/* <Test4 /> */}
     </div>
   );
 };

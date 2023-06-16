@@ -193,6 +193,7 @@ const Test4 = () => {
       reader.readAsDataURL(file);
     }
   };
+  
 
   const clearCanvas = () => {
     setDrawings([]);
