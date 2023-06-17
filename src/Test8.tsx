@@ -3,13 +3,14 @@ import "tailwindcss/tailwind.css";
 
 interface Shape {
   id: number;
-  type: "pen" | "rectangle" | "triangle" | "circle";
+  type: "pen" | "rectangle" | "triangle" | "circle" | "text";
   x: number;
   y: number;
   width: number;
   height: number;
   line: { mouseX: number; mouseY: number }[];
-  color: string
+  color: string;
+  text: string;
 }
 
 interface coordinate {
@@ -19,7 +20,7 @@ interface coordinate {
   mouseY: number;
 }
 
-const Test7 = () => {
+const Test8 = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawings, setDrawings] = useState<Shape[]>([]);
   const [line, setLine] = useState<[{ mouseX: number; mouseY: number }]>([
@@ -45,13 +46,9 @@ const Test7 = () => {
     startX: 0,
     startY: 0,
   });
-  const [color, setColor] = useState<string>("black")
-
-  console.log(color)
-
+  const [color, setColor] = useState<string>("black");
+  const [edge, setEdge] = useState<boolean>(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  console.log(drawings)
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -59,10 +56,11 @@ const Test7 = () => {
 
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const rect = canvas.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
+    const ctx = canvas.getContext("2d");
+    if (ctx === null) return;
 
     if (selectedTool === "pen") {
       setLine([{ mouseX: clickX, mouseY: clickY }]);
@@ -90,22 +88,111 @@ const Test7 = () => {
         setSelectedBox(foundDrawing.id);
       }
     } else if (selectedTool === "move") {
-      const foundDrawing = drawings.find(
+      const foundDrawingInside = drawings.find(
         (drawing) =>
-          clickX >= drawing.x &&
-          clickX <= drawing.x + drawing.width &&
-          clickY >= drawing.y &&
-          clickY <= drawing.y + drawing.height
+          clickX >= drawing.x + 32 &&
+          clickX <= drawing.x + drawing.width - 32 &&
+          clickY >= drawing.y + 32 &&
+          clickY <= drawing.y + drawing.height - 32
       );
-      if (foundDrawing) {
-        setSelectedBox(foundDrawing.id);
+      const foundDrawingEdge = drawings.find(
+        (drawing) =>
+          (clickX >= drawing.x + 50 &&
+            clickX <= drawing.x + (drawing.width + 25) - 50 &&
+            ((clickY >= drawing.y && clickY <= drawing.y + 50) ||
+              (clickY >= drawing.y + (drawing.height + 25) - 50 &&
+                clickY <= drawing.y + drawing.height))) ||
+          (clickY >= drawing.y + 50 &&
+            clickY <= drawing.y + (drawing.height + 25) - 50 &&
+            ((clickX >= drawing.x && clickX <= drawing.x + 50) ||
+              (clickX >= drawing.x + (drawing.width + 25) - 50 &&
+                clickX <= drawing.x + drawing.width)))
+      );
+
+      if (foundDrawingInside) {
         setSelectedBoxPosition({
-          startX: clickX - foundDrawing.x,
-          startY: clickY - foundDrawing.y,
+          startX: clickX - foundDrawingInside.x,
+          startY: clickY - foundDrawingInside.y,
         });
+        setSelectedBox(foundDrawingInside.id);
+        setEdge(false);
       }
+      if (foundDrawingEdge) {
+        setSelectedBoxPosition({
+          startX: clickX - foundDrawingEdge.x,
+          startY: clickY - foundDrawingEdge.y,
+        });
+        setSelectedBox(foundDrawingEdge.id);
+        setEdge(true);
+      }
+    } else if (selectedTool === "text") {
+      setCoordinates({
+        startX: e.clientX - rect.left,
+        startY: e.clientY - rect.top,
+        mouseX: e.clientX - rect.left,
+        mouseY: e.clientY - rect.top,
+      });
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const container = document.getElementById("container");
+      const existingInput = container?.querySelector("form ");
+
+      // Check if an existing input element exists
+      if (existingInput) {
+        container?.removeChild(existingInput);
+      }
+      const inputContainer = document.createElement("form");
+      var input = document.createElement("input");
+      const button = document.createElement("button");
+      input.type = "text";
+      input.style.background = "red";
+      input.style.fontSize = "24px";
+      inputContainer.style.position = "absolute";
+      inputContainer.style.left = clickX + rect.left + "px";
+      inputContainer.style.top = clickY + rect.top + "px";
+      button.textContent = "Submit";
+      button.addEventListener("click", function (e) {
+        e.preventDefault();
+        const inputValue = input.value;
+        ctx.font = "24px Arial"; // Set the font size here (adjust the value as needed)
+        ctx.fillStyle = "black";
+        // setCoordinates({
+        //   startX: e.clientX - rect.left,
+        //   startY: e.clientY - rect.top,
+        //   mouseX: e.clientX - rect.left,
+        //   mouseY: e.clientY - rect.top,
+        // });
+
+        ctx?.fillText(inputValue, clickX - 2, clickY + 24);
+
+        // const newShape: Shape = {
+        //   id: drawings.length + 1,
+        //   type: selectedTool,
+        //   x: startX,
+        //   y: startY,
+        //   width : 0,
+        //   height: 0,
+        //   line: [{ mouseX: 0, mouseY: 0 }],
+        //   color: color,
+        //   text:"hai",
+        // };
+
+        // setDrawings((prevDrawings) => [...prevDrawings, newShape]);
+        //   console.log("Button clicked!");
+      });
+      inputContainer.style.display = "flex";
+      inputContainer.appendChild(input);
+      inputContainer.appendChild(button);
+      container?.appendChild(inputContainer);
+      input.focus();
+      button.addEventListener("click", function () {
+        container?.removeChild(inputContainer);
+      });
     }
 
+    // Remove the input element when no longer needed
     setIsDrawing(true);
   };
 
@@ -139,16 +226,16 @@ const Test7 = () => {
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-    if (  selectedTool !== "pen"){
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      if (image !== undefined) {
-        ctx.drawImage(image, 0, 0);
+      if (selectedTool !== "pen") {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (image !== undefined) {
+          ctx.drawImage(image, 0, 0);
+        }
       }
-    }
 
       drawings.forEach((drawing) => {
         if (drawing.type === "pen") {
-          ctx.strokeStyle = drawing.color;;
+          ctx.strokeStyle = drawing.color;
           ctx.beginPath();
           ctx.moveTo(drawing.line[0].mouseX, drawing.line[0].mouseY);
           drawing.line.map((dots) => {
@@ -175,6 +262,8 @@ const Test7 = () => {
           ctx.beginPath();
           ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
           ctx.stroke();
+        } else if (drawing.type === "text") {
+          ctx.fillText(drawing.text, drawing.x, drawing.y);
         }
       });
 
@@ -195,12 +284,7 @@ const Test7 = () => {
         setLine(newLine);
       } else if (selectedTool === "rectangle") {
         ctx.strokeStyle = color;
-        ctx.strokeRect(
-          startX,
-          startY,
-          width,
-          height
-        );
+        ctx.strokeRect(startX, startY, width, height);
       } else if (selectedTool === "triangle") {
         ctx.strokeStyle = color;
         ctx.beginPath();
@@ -222,13 +306,17 @@ const Test7 = () => {
     } else if (selectedTool === "move" && selectedBox !== null) {
       const newDrawings = drawings.map((drawing) =>
         drawing.id === selectedBox
-          ? {
-              ...drawing,
-              // x: mouseX - selectedBoxPosition.startX,
-              // y: mouseY - selectedBoxPosition.startY,
-              width: mouseX - drawing.x,
-              height: mouseY - drawing.y,
-            }
+          ? edge
+            ? {
+                ...drawing,
+                width: mouseX - drawing.x,
+                height: mouseY - drawing.y,
+              }
+            : {
+                ...drawing,
+                x: mouseX - selectedBoxPosition.startX,
+                y: mouseY - selectedBoxPosition.startY,
+              }
           : drawing
       );
 
@@ -276,7 +364,7 @@ const Test7 = () => {
     setIsDrawing(false);
 
     if (selectedTool === "pen") {
-      if(color == undefined) return
+      if (color === undefined) return;
       const newShape: Shape = {
         id: drawings.length + 1,
         type: selectedTool,
@@ -286,14 +374,14 @@ const Test7 = () => {
         height: 0,
         line: line,
         color: color,
+        text: "",
       };
       setDrawings((prevDrawings) => [...prevDrawings, newShape]);
-      setLine([{mouseX: 0, mouseY: 0}])
+      setLine([{ mouseX: 0, mouseY: 0 }]);
       // const canvas = canvasRef.current;
       // if (!canvas)return
       // const ctx = canvas?.getContext("2d");
       // ctx?.clearRect(0, 0, canvas.width, canvas.height);
-
     } else if (
       selectedTool === "rectangle" ||
       selectedTool === "triangle" ||
@@ -309,8 +397,9 @@ const Test7 = () => {
         y: startY,
         width,
         height,
-        line: [{mouseX : 0, mouseY : 0}],
-        color: color
+        line: [{ mouseX: 0, mouseY: 0 }],
+        color: color,
+        text: "",
       };
 
       setDrawings((prevDrawings) => [...prevDrawings, newShape]);
@@ -350,6 +439,20 @@ const Test7 = () => {
       setSelectedBox(null);
     } else if (selectedTool === "move") {
       setSelectedBox(null);
+      setEdge(false);
+    } else if (selectedTool === "text") {
+      const newShape: Shape = {
+        id: drawings.length + 1,
+        type: selectedTool,
+        x: startX,
+        y: startY,
+        width: 0,
+        height: 0,
+        line: [],
+        color,
+        text,
+      };
+      setDrawings((prevDrawings) => [...prevDrawings, newShape]);
     }
   };
 
@@ -366,31 +469,34 @@ const Test7 = () => {
 
   const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-
+  
     if (file) {
       const reader = new FileReader();
-
+  
       reader.onload = (e) => {
         const img = new Image();
         setImage(img);
         img.onload = () => {
           const canvas = canvasRef.current;
           const context = canvas?.getContext("2d");
-
+  
           if (canvas && context) {
-            canvas.width = img.width;
-            canvas.height = img.height;
-
-            context.drawImage(img, 0, 0);
+            const aspectRatio = img.width / img.height;
+            const canvasWidth = Math.min(img.width, canvas.width);
+            const canvasHeight = canvasWidth / aspectRatio;
+  
+            canvas.height = canvasHeight;
+            context.drawImage(img, 0, 0, canvasWidth, canvasHeight);
           }
         };
-
+  
         img.src = e.target?.result as string;
       };
-
+  
       reader.readAsDataURL(file);
     }
   };
+  
 
   const clearCanvas = () => {
     const canvas = canvasRef.current;
@@ -410,7 +516,7 @@ const Test7 = () => {
   };
 
   const handleColorChange = (e: ChangeEvent<HTMLInputElement>) => {
-    console.log("masuk")
+    console.log("masuk");
     setColor(e.target.value);
   };
 
@@ -419,48 +525,57 @@ const Test7 = () => {
     const ctx = canvas?.getContext("2d");
 
     if (ctx) {
-      ctx.strokeStyle = color ?? "black";;
+      ctx.strokeStyle = color ?? "black";
       ctx.lineWidth = 3;
     }
   }, [color]);
 
   return (
-    <div className="h-screen flex justify-center items-center">
-      <input type="file" accept="image/*" onChange={handleImageUpload} />
-      <h4 className="mb-4">Drag the mouse to create a rectangle</h4>
-      <canvas
-        id="canvas"
-        ref={canvasRef}
-        width={500}
-        height={500}
-        className="border-2 border-red-500"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseOut={handleMouseOut}
-      ></canvas>
+    <div className="h-screen w-full flex justify-center items-center">
       <div>
-        <label htmlFor="tool">Select Tool: </label>
-        <input type="color"  onChange={handleColorChange} />
-        <select id="tool" value={selectedTool} onChange={handleToolChange}>
-          <option value="pen">Pen</option>
-          <option value="rectangle">Rectangle</option>
-          <option value="triangle">Triangle</option>
-          <option value="circle">Circle</option>
-          <option value="erase">Erase</option>
-          <option value="move">Move</option>
-        </select>
-      </div>
-      <div className="mt-4">
-        <button
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          onClick={clearCanvas}
-        >
-          Clear Canvas
-        </button>
+        <div id="container">
+          <canvas
+            id="canvas"
+            ref={canvasRef}
+            width={500}
+            height={500}
+            className="border-4 border-black overflow-hidden"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseOut={handleMouseOut}
+          ></canvas>
+        </div>
+        <div className="flex justify-between items-start mt-2">
+          <input type="file" accept="image/*" onChange={handleImageUpload} className="w-1/2"/>
+          <div>
+            <label htmlFor="tool">Select Tool: </label>
+            <select id="tool" value={selectedTool} onChange={handleToolChange}>
+              <option value="pen">Pen</option>
+              <option value="rectangle">Rectangle</option>
+              <option value="triangle">Triangle</option>
+              <option value="circle">Circle</option>
+              <option value="erase">Erase</option>
+              <option value="move">Move</option>
+              <option value="text">Text</option>
+            </select>
+            <div className="flex space-x-2">
+              <div>Choose Color</div>
+              <input type="color" onChange={handleColorChange} />
+            </div>
+          </div>
+        </div>
+        <div className="">
+            <button
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              onClick={clearCanvas}
+            >
+              Clear Canvas
+            </button>
+          </div>
       </div>
     </div>
   );
 };
 
-export default Test7;
+export default Test8;
