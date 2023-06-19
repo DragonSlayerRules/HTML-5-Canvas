@@ -9,6 +9,7 @@ import Test7 from "./Test7";
 import ImageUploader from "./Test3";
 import Test8 from "./Test8";
 import CanvasWithBox from "./Test8";
+import Test9 from "./Test9";
 // import RectangleDrawing from "./Test2";
 
 const App = () => {
@@ -17,7 +18,7 @@ const App = () => {
       {/* <RectangleDrawing /> */}
       {/* <ImageUploader /> */}
       {/* <Test1 /> */}
-      <Test8 />
+      <Test9 />
       {/* <CanvasWithBox /> */}
       
       {/* <Test1 /> */}
