@@ -49,8 +49,6 @@ const Test9 = () => {
   });
 
   const [color, setColor] = useState<string>("black");
-  const [edge, setEdge] = useState<boolean>(false);
-
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const Redraw = (drawing: Shape, ctx: CanvasRenderingContext2D | null) => {
@@ -85,7 +83,12 @@ const Test9 = () => {
       ctx.fill();
     } else if (drawing.type === "text") {
       ctx.fillStyle = drawing.color;
-      ctx.fillText(drawing.text, drawing.x, drawing.y);
+      ctx.font = "24px Arial";
+      ctx.fillText(
+        drawing.text,
+        drawing.x,
+        drawing.y - 20 + drawing.height + 20
+      );
     }
   };
 
@@ -122,7 +125,7 @@ const Test9 = () => {
         mouseX: e.clientX - rect.left,
         mouseY: e.clientY - rect.top,
       });
-    } else if (selectedTool === "erase") {
+    } else if (selectedTool === "move" || selectedTool === "resize" || selectedTool === "eraser") {
       const foundDrawing = drawings.find(
         (drawing) =>
           clickX >= drawing.x &&
@@ -130,34 +133,14 @@ const Test9 = () => {
           clickY >= drawing.y &&
           clickY <= drawing.y + drawing.height
       );
-
-      if (foundDrawing) {
-        setSelectedBox(foundDrawing.id);
-      }
-    } else if (selectedTool === "move" || selectedTool === "resize") {
-      const foundDrawing = drawings.find(
-        (drawing) =>
-          clickX >= drawing.x + 32 &&
-          clickX <= drawing.x + drawing.width - 32 &&
-          clickY >= drawing.y + 32 &&
-          clickY <= drawing.y + drawing.height - 32
-      );
-
       if (foundDrawing) {
         setSelectedBoxPosition({
           startX: clickX - foundDrawing.x,
           startY: clickY - foundDrawing.y,
         });
         setSelectedBox(foundDrawing.id);
-        setEdge(false);
       }
     } else if (selectedTool === "text") {
-      setCoordinates({
-        startX: e.clientX - rect.left,
-        startY: e.clientY - rect.top,
-        mouseX: e.clientX - rect.left,
-        mouseY: e.clientY - rect.top,
-      });
       const canvas = canvasRef.current;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
@@ -169,7 +152,7 @@ const Test9 = () => {
       }
 
       const inputContainer = document.createElement("form");
-      var input = document.createElement("input");
+      const input = document.createElement("input");
       const button = document.createElement("button");
       input.type = "text";
       input.style.paddingLeft = "8px";
@@ -184,7 +167,7 @@ const Test9 = () => {
         const inputValue = input.value;
         ctx.font = "24px Arial"; // Set the font size here (adjust the value as needed)
         ctx.fillStyle = color;
-        ctx?.fillText(inputValue, clickX - 2, clickY + 24);
+        ctx?.fillText(inputValue, clickX - 4, clickY + 24);
         const textMetrics = ctx.measureText(inputValue);
         const textWidth = textMetrics.width;
         const textHeight =
@@ -213,8 +196,6 @@ const Test9 = () => {
         container?.removeChild(inputContainer);
       });
     }
-
-    // Remove the input element when no longer needed
     setIsDrawing(true);
   };
 
@@ -310,7 +291,10 @@ const Test9 = () => {
         ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
         ctx.fill();
       }
-    } else if ((selectedTool === "move" || selectedTool === "resize") && selectedBox !== null) {
+    } else if (
+      (selectedTool === "move" || selectedTool === "resize") &&
+      selectedBox !== null
+    ) {
       const newDrawings = drawings.map((drawing) =>
         drawing.id === selectedBox
           ? selectedTool === "resize"
@@ -325,7 +309,7 @@ const Test9 = () => {
                 y: mouseY - selectedBoxPosition.startY,
               }
           : drawing
-      ); 
+      );
 
       setDrawings(newDrawings);
 
@@ -335,7 +319,7 @@ const Test9 = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (image !== undefined) {
-        ctx.drawImage(image, 0, 0);
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
       }
 
       newDrawings.forEach((drawing) => {
@@ -382,7 +366,7 @@ const Test9 = () => {
         text: "",
       };
       setDrawings((prevDrawings) => [...prevDrawings, newShape]);
-    } else if (selectedTool === "erase") {
+    } else if (selectedTool === "eraser") {
       const unDeletedBox = drawings.filter((shape) => shape.id !== selectedBox);
       setDrawings(unDeletedBox);
       const canvas = canvasRef.current;
@@ -398,7 +382,6 @@ const Test9 = () => {
       setSelectedBox(null);
     } else if (selectedTool === "move") {
       setSelectedBox(null);
-      setEdge(false);
     }
   };
 
@@ -415,6 +398,13 @@ const Test9 = () => {
 
   const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setDrawings([])
 
     if (file) {
       const reader = new FileReader();
@@ -462,13 +452,14 @@ const Test9 = () => {
     }
   }, [color]);
 
-  console.log(selectedTool)
-  console.log(selectedBox)
+  console.log(selectedBox);
+
   return (
-    <div className="h-screen w-full flex justify-center items-center">
-      <div className="flex gap-2">
+    <div className="w-full justify-start items-center">
+        <div className="py-2 mt-2 mx-2 px-2 font-bold text-black/80 border-2 border-primary rounded-md text-2xl">Richard Angkasa - Canvas</div>
+      <div className="flex gap-2 px-2 pt-2">
         <div className="space-y-2">
-          <div className="flex flex-col gap-4 border-4 border-primary rounded-md h-fit py-4">
+          <div className="flex flex-col gap-4 border-2 border-primary rounded-md h-fit py-4">
             {[
               "pen",
               "rectangle",
@@ -492,7 +483,7 @@ const Test9 = () => {
                 className={`${
                   selectedTool === unit
                     ? "border-b border-t border-black"
-                    : "border-none"
+                    : "border-b border-t border-transparent"
                 } px-2 py-1`}
               >
                 <img
@@ -507,7 +498,7 @@ const Test9 = () => {
             <input
               type="color"
               onChange={handleColorChange}
-              className="w-full h-14 p-1 border-4 border-primary rounded-md"
+              className="w-full h-14 p-1 border-2 border-primary rounded-md"
             />
           </div>
         </div>
@@ -518,7 +509,7 @@ const Test9 = () => {
               ref={canvasRef}
               width={500}
               height={500}
-              className="border-4 border-primary overflow-hidden rounded-md"
+              className="border-2 border-primary overflow-hidden rounded-md"
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
